@@ -11,7 +11,7 @@ class Compiler:
 
     def check_mongodb(self):
         # Step 1: Collect the keywords
-        collection = self.mongodb_client.NFCC.problem_data  # Change to problem_data
+        collection = self.mongodb_client.NFCC.Real_test  # Change here
         result = list(collection.find({"status": 1}))
 
         keyword_dict = {}
@@ -28,7 +28,7 @@ class Compiler:
         self.datasource_ids = list(keyword_dict.keys())
 
         # Update the status of collected keywords to 2
-        # collection.update_many({"status": 1}, {"$set": {"status": 2}})
+        collection.update_many({"status": 1}, {"$set": {"status": 2}})
 
         self.keyword_dict = keyword_dict
         return self

@@ -39,7 +39,7 @@ class TestReingest2(unittest.TestCase):
         mock_mongodb_client.nfis.problem_data = mock_collection
 
         # Create an instance of the Reingest2 class with the mock MongoDB client
-        reingest = Reingest2(mock_mongodb_client, {})
+        reingest = Reingest(mock_mongodb_client, {})
 
         # Call the get_info_from_mongodb method
         result = reingest.get_info_from_mongodb()

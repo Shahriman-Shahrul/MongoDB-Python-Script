@@ -28,5 +28,5 @@ config = {
     "integrationUrl": "http://localhost:3001"
 }
 
-reingest = Reingest2(mongodb_client, config)
+reingest = Reingest(mongodb_client, config)
 reingest.get_info_from_mongodb()
