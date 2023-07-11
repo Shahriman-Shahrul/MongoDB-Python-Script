@@ -1,5 +1,6 @@
 
-from datetime import datetime, timedelta
+import datetime 
+from datetime import timedelta
 import requests
 import json
 
@@ -41,7 +42,7 @@ class YourClass:
             "request_from": request_from
         }
 
-        current_datetime = sla_datetime - timedelta(days=2)
+        current_datetime = sla_datetime - timedelta(days=2) # Giving Fake Current Date time 
 
         if current_datetime < sla_datetime:
             for _ in range(6):

@@ -29,7 +29,6 @@ class Reingest:
                 filtered_result.append(d)
 
         self.result = filtered_result
-        print(self.result)
         return self.result
 
     def trigger_nfis_integration(self, integration_endpoint):

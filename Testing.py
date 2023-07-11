@@ -42,7 +42,7 @@ config = {
 
 reingest = Reingest(mongodb_client, config)
 reingest.get_info_from_mongodb()
-# reingest.trigger_nfis_integration("api/v1/integration/agency")
+reingest.trigger_nfis_integration2("api/v1/integration/agency")
 
 
 ################################
