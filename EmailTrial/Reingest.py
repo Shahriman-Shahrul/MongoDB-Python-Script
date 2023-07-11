@@ -29,6 +29,7 @@ class Reingest:
                 filtered_result.append(d)
 
         self.result = filtered_result
+        # print(self.result)
         return self.result
 
     def trigger_nfis_integration(self, integration_endpoint):
@@ -44,10 +45,8 @@ class Reingest:
             jo_id = data_item['_id'].get('jo_id')
             ip_id = data_item['_id'].get('ip_id')
 
-            sla_datetime_str = self.result["sla_datetime"]["$date"]
-            sla_datetime = datetime.strptime(
-                sla_datetime_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-            sla_datetime = current_datetime + timedelta(days=2)
+            sla_datetime = data_item["sla_datetime"]
+
             # Prepare the payload for the POST request
             payload = {
                 "rfi_id": rfi_id,
@@ -61,11 +60,10 @@ class Reingest:
             }
 
             # change this to datetime.now()
-        current_datetime = sla_datetime - timedelta(days=2)
+            current_datetime = sla_datetime - timedelta(days=2)
 
-        if current_datetime < sla_datetime:
-            for _ in range(6):
-                try:
+            if current_datetime < sla_datetime:
+                for _ in range(6):
                     # Send the POST request
                     response = requests.post(
                         self.config["integrationUrl"] +
@@ -80,20 +78,17 @@ class Reingest:
 
                     # Check the response and print the result
                     if response.status_code == 200:
+                        print("its successfull")
                         break
                     else:
                         raise Exception(
-                            f"Integration failed for DataSource ID: {datasource_id}, Status code: {response.status_code}, Response: {response.text}")
-
-                except Exception:
-                    print(
-                        "Error occurred while sending the POST request:", response.text)
-        else:
-            raise Exception(
-                f"Integration failed for DataSource ID: {datasource_id}, Status code: {response.status_code}, Response: {response.text}")
+                            f"Integration failed for DataSource ID: {datasource_id} Keyword:{keyword} \nResponse:\n{response.text}")
+            else:
+                print("SLA Datetime has surpassed the Current Datetime")
 
         return self
 
+    # Experimental only to see what going on inside, it works without the break format
     def trigger_nfis_integration2(self, integration_endpoint):
         for data_item in self.result:
             # Extract information from each item in the "result" list
@@ -106,34 +101,46 @@ class Reingest:
             jo_id = data_item['_id'].get('jo_id')
             ip_id = data_item['_id'].get('ip_id')
 
+            sla_datetime = data_item["sla_datetime"]
             # Prepare the payload for the POST request
-        payload = {
-            "rfi_id": rfi_id,
-            "jo_id": jo_id,
-            "ip_id": ip_id,
-            "datasource_id": datasource_id,
-            "group_type": "nfcc",
-            "keyword": keyword,
-            "keyword_type": keyword_type,
-            "request_from": request_from
-        }
-        for _ in range(6):
-            try:
-                # Send the POST request
-                response = requests.post(
-                    self.config["integrationUrl"] +
-                    integration_endpoint,
-                    data=json.dumps(payload),
-                    headers={
-                        "Content-type": "application/json",
-                        "Accept": "application/json"
-                    },
-                    verify=False
-                )
-                # Check the response and print the result
+            payload = {
+                "rfi_id": rfi_id,
+                "jo_id": jo_id,
+                "ip_id": ip_id,
+                "datasource_id": datasource_id,
+                "group_type": "nfcc",
+                "keyword": keyword,
+                "keyword_type": keyword_type,
+                "request_from": request_from
+            }
+            print(payload)
+
+        # change this to datetime.now()
+            current_datetime = sla_datetime - timedelta(days=2)
+
+            if current_datetime < sla_datetime:
+                for _ in range(6):
+
+                    # Send the POST request
+                    response = requests.post(
+                        self.config["integrationUrl"] +
+                        integration_endpoint,
+                        data=json.dumps(payload),
+                        headers={
+                            "Content-type": "application/json",
+                            "Accept": "application/json"
+                        },
+                        verify=False
+                    )
+
+                    # Check the response and print the result
                 if response.status_code == 200:
-                    print(response.text)
-            except Exception:
-                print(
-                    f"Integration failed for DataSource ID: {datasource_id}, Status code: {response.status_code}, Response: {response.text}")
+                    print(f"Keyword : {keyword} \n {response.text}")
+                    # break
+                else:
+                    print(
+                        f"Integration failed for DataSource ID: {datasource_id} \nkeyword: {keyword} \nResponse: \n{response.text}")
+            else:
+                print("SLA Datetime has surpassed the Current Datetime")
+
         return self
