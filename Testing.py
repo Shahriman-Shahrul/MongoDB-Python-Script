@@ -30,7 +30,7 @@ config = {
         "caFile": "/home/rootadmin/spark_projects/certs/ca.pem",
         "certFile": "/home/rootadmin/spark_projects/certs/nfcc.gov.my.pem"
     },
-    "integrationUrl": "http://localhost:3001"
+    "integrationUrl": "http://localhost:3001/"
 }
 
 # Step 1 : Compiler
@@ -40,8 +40,8 @@ config = {
 
 # Step 2 : Reingest
 
-# reingest = Reingest(mongodb_client, config)
-# reingest.get_info_from_mongodb()
+reingest = Reingest(mongodb_client, config)
+reingest.get_info_from_mongodb()
 # reingest.trigger_nfis_integration("api/v1/integration/agency")
 
 

@@ -13,7 +13,7 @@ class Reingest:
         collection = self.mongodb_client.NFCC.problem_data2
         result = list(collection.find({"status": 2}))
 
-        unique_entries = {}
+        unique_entries = set()
         filtered_result = []
 
         for d in result:
@@ -29,39 +29,101 @@ class Reingest:
                 filtered_result.append(d)
 
         self.result = filtered_result
+        print(self.result)
         return self.result
 
     def trigger_nfis_integration(self, integration_endpoint):
-        # Get the current datetime
-        current_datetime = datetime.now()
 
-        # Compare with the SLA datetime
-        sla_datetime = current_datetime + timedelta(days=1)
+        for data_item in self.result:
+            # Extract information from each item in the "result" list
+            rfi_id = data_item['_id']['rfi_id']
+            datasource_id = data_item['_id']['data_source_id']
+            keyword = data_item['_id']['keyword']
+            keyword_type = data_item['keyword_type']
+            request_from = data_item['request_from']
 
-        if current_datetime > sla_datetime:
-            for data_item in self.result:
-                # Extract information from each item in the "result" list
-                rfi_id = data_item['_id']['rfi_id']
-                datasource_id = data_item['_id']['data_source_id']
-                keyword = data_item['_id']['keyword']
-                keyword_type = data_item['keyword_type']
-                request_from = data_item['request_from']
+            jo_id = data_item['_id'].get('jo_id')
+            ip_id = data_item['_id'].get('ip_id')
 
-                # Prepare the payload for the POST request
-                payload = {
-                    "rfi_id": rfi_id,
-                    "jo_id": "JOP202200001",
-                    "ip_id": "IPID",
-                    "datasource_id": datasource_id,
-                    "group_type": "nfcc",
-                    "keyword": keyword,
-                    "keyword_type": keyword_type,
-                    "request_from": request_from
-                }
+            sla_datetime_str = self.result["sla_datetime"]["$date"]
+            sla_datetime = datetime.strptime(
+                sla_datetime_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+            sla_datetime = current_datetime + timedelta(days=2)
+            # Prepare the payload for the POST request
+            payload = {
+                "rfi_id": rfi_id,
+                "jo_id": jo_id,
+                "ip_id": ip_id,
+                "datasource_id": datasource_id,
+                "group_type": "nfcc",
+                "keyword": keyword,
+                "keyword_type": keyword_type,
+                "request_from": request_from
+            }
+
+            # change this to datetime.now()
+        current_datetime = sla_datetime - timedelta(days=2)
+
+        if current_datetime < sla_datetime:
+            for _ in range(6):
+                try:
+                    # Send the POST request
+                    response = requests.post(
+                        self.config["integrationUrl"] +
+                        integration_endpoint,
+                        data=json.dumps(payload),
+                        headers={
+                            "Content-type": "application/json",
+                            "Accept": "application/json"
+                        },
+                        verify=False
+                    )
+
+                    # Check the response and print the result
+                    if response.status_code == 200:
+                        break
+                    else:
+                        raise Exception(
+                            f"Integration failed for DataSource ID: {datasource_id}, Status code: {response.status_code}, Response: {response.text}")
+
+                except Exception:
+                    print(
+                        "Error occurred while sending the POST request:", response.text)
+        else:
+            raise Exception(
+                f"Integration failed for DataSource ID: {datasource_id}, Status code: {response.status_code}, Response: {response.text}")
+
+        return self
+
+    def trigger_nfis_integration2(self, integration_endpoint):
+        for data_item in self.result:
+            # Extract information from each item in the "result" list
+            rfi_id = data_item['_id']['rfi_id']
+            datasource_id = data_item['_id']['data_source_id']
+            keyword = data_item['_id']['keyword']
+            keyword_type = data_item['keyword_type']
+            request_from = data_item['request_from']
+
+            jo_id = data_item['_id'].get('jo_id')
+            ip_id = data_item['_id'].get('ip_id')
+
+            # Prepare the payload for the POST request
+        payload = {
+            "rfi_id": rfi_id,
+            "jo_id": jo_id,
+            "ip_id": ip_id,
+            "datasource_id": datasource_id,
+            "group_type": "nfcc",
+            "keyword": keyword,
+            "keyword_type": keyword_type,
+            "request_from": request_from
+        }
+        for _ in range(6):
             try:
                 # Send the POST request
                 response = requests.post(
-                    self.config["integrationUrl"] + integration_endpoint,
+                    self.config["integrationUrl"] +
+                    integration_endpoint,
                     data=json.dumps(payload),
                     headers={
                         "Content-type": "application/json",
@@ -69,15 +131,10 @@ class Reingest:
                     },
                     verify=False
                 )
-
                 # Check the response and print the result
                 if response.status_code == 200:
-                    print(
-                        f"Integration successful for DataSource ID: {datasource_id}")
-                else:
-                    print(
-                        f"Integration failed for DataSource ID: {datasource_id}, Status code: {response.status_code}, Response: {response.json()}")
-
-            except Exception as e:
-                print("Error occurred while sending the POST request:", str(e))
-            return self
+                    print(response.text)
+            except Exception:
+                print(
+                    f"Integration failed for DataSource ID: {datasource_id}, Status code: {response.status_code}, Response: {response.text}")
+        return self
