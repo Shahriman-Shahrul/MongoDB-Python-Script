@@ -1,7 +1,7 @@
 
 
 from EmailTrial.collect_keyword_send_email import Compiler
-from EmailTrial.Reingest import Reingest
+from EmailTrial.reingest import Reingest
 import pymongo
 
 
