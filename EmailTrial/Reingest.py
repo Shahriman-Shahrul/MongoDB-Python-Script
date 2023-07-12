@@ -10,7 +10,7 @@ class Reingest:
         self.result = None
 
     def get_info_from_mongodb(self):
-        collection = self.mongodb_client.NFCC.problem_data2
+        collection = self.mongodb_client.NFCC.Real_test
         result = list(collection.find({"status": 2}))
 
         unique_entries = set()
@@ -33,8 +33,8 @@ class Reingest:
         return self.result
 
     def trigger_nfis_integration(self, integration_endpoint):
-
         for data_item in self.result:
+
             # Extract information from each item in the "result" list
             rfi_id = data_item['_id']['rfi_id']
             datasource_id = data_item['_id']['data_source_id']
@@ -42,6 +42,7 @@ class Reingest:
             keyword_type = data_item['keyword_type']
             request_from = data_item['request_from']
 
+            # In case there is no jo_id and ip_id , we can also set default
             jo_id = data_item['_id'].get('jo_id')
             ip_id = data_item['_id'].get('ip_id')
 
@@ -64,33 +65,55 @@ class Reingest:
 
             if current_datetime < sla_datetime:
                 for _ in range(6):
-                    # Send the POST request
-                    response = requests.post(
-                        self.config["integrationUrl"] +
-                        integration_endpoint,
-                        data=json.dumps(payload),
-                        headers={
-                            "Content-type": "application/json",
-                            "Accept": "application/json"
-                        },
-                        verify=False
-                    )
+                    try:
+                        # Send the POST request
+                        response = requests.post(
+                            self.config["integrationUrl"] +
+                            integration_endpoint,
+                            data=json.dumps(payload),
+                            headers={
+                                "Content-type": "application/json",
+                                "Accept": "application/json"
+                            },
+                            verify=False
+                        )
 
-                    # Check the response and print the result
-                    if response.status_code == 200:
-                        print("its successfull")
-                        break
-                    else:
-                        raise Exception(
-                            f"Integration failed for DataSource ID: {datasource_id} Keyword:{keyword} \nResponse:\n{response.text}")
+                        # Check the response and print the result
+                        if response.status_code == 200:
+                            break
+                        else:  # Do not put raise exception
+                            print(
+                                f"Integration failed for DataSource ID: {datasource_id} \nKeyword:{keyword} \nResponse:\n{response.text}")
+                            break
+                    except Exception as e:
+                        print(str(e))
             else:
                 print("SLA Datetime has surpassed the Current Datetime")
 
         return self
 
     # Experimental only to see what going on inside, it works without the break format
+
     def trigger_nfis_integration2(self, integration_endpoint):
         for data_item in self.result:
+            # Check if the required fields is available
+            missing_fields = [
+                field for field in required_fields if field not in data_item]
+            if missing_fields:
+                print("Missing required fields in data item:",
+                      ", ".join(missing_fields))
+            else:
+                continue
+
+            if not all(field in data_item["_id"] for field in ["rfi_id", "datasource_id", "keyword"]):
+                missing_field_ids = [field for field in [
+                    "rfi_id", "datasource_id", "keyword"] if field not in data_item["_id"]]
+                missing_fields_str = ", ".join(missing_field_ids)
+                print(
+                    f"Missing '{missing_fields_str}' field(s) in data item. Skipping integration.")
+            else:
+                continue
+
             # Extract information from each item in the "result" list
             rfi_id = data_item['_id']['rfi_id']
             datasource_id = data_item['_id']['data_source_id']
@@ -120,27 +143,31 @@ class Reingest:
 
             if current_datetime < sla_datetime:
                 for _ in range(6):
+                    try:
+                        # Send the POST request
+                        response = requests.post(
+                            self.config["integrationUrl"] +
+                            integration_endpoint,
+                            data=json.dumps(payload),
+                            headers={
+                                "Content-type": "application/json",
+                                "Accept": "application/json"
+                            },
+                            verify=False
+                        )
 
-                    # Send the POST request
-                    response = requests.post(
-                        self.config["integrationUrl"] +
-                        integration_endpoint,
-                        data=json.dumps(payload),
-                        headers={
-                            "Content-type": "application/json",
-                            "Accept": "application/json"
-                        },
-                        verify=False
-                    )
+                        # Check the response and print the result
+                        if response.status_code == 200:
+                            print(f"Keyword : {keyword} \n {response.text}\n")
+                            break
+                        else:
+                            print(
+                                f"Integration failed for DataSource ID: {datasource_id} \nkeyword: {keyword} \nResponse: \n{response.text}\n")
+                            break
 
-                    # Check the response and print the result
-                if response.status_code == 200:
-                    print(f"Keyword : {keyword} \n {response.text}")
-                    # break
+                    except Exception as e:
+                        print(str(e))
                 else:
-                    print(
-                        f"Integration failed for DataSource ID: {datasource_id} \nkeyword: {keyword} \nResponse: \n{response.text}")
-            else:
-                print("SLA Datetime has surpassed the Current Datetime")
+                    print("SLA Datetime has surpassed the Current Datetime")
 
         return self
