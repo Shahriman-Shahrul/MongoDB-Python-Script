@@ -82,11 +82,13 @@ class Reingest:
                             print(f"Integration for Keyword{keyword}")
                             break
                         else:
-                            print Exception(
+                            print(
                                 f"Integration failed for DataSource ID: {datasource_id} \nKeyword:{keyword} \nResponse:\n{response.text}")
                     except Exception as e:
                         print(str(e))
-                 response.status_code !
+                if response.status_code != 200 : 
+                    raise Exception(
+                                f"Integration failed for DataSource ID: {datasource_id} \nKeyword:{keyword} \nResponse:\n{response.text}")
             else:
                 print("SLA Datetime has surpassed the Current Datetime")
 
