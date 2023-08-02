@@ -1,13 +1,23 @@
 
-
-from EmailTrial.collect_keyword_send_email import Compiler
-from EmailTrial.reingest import Reingest
+from NFIS_email_trial.collect_keyword_send_email import Compiler
+from NFIS_email_trial.reingest import Reingest
 import pymongo
 
 
 # Connect to MongoDB
-mongodb_client = pymongo.MongoClient("mongodb://localhost:27017")
+# mongodb_client = pymongo.MongoClient("mongodb://localhost:27017")
 
+# Define the connection parameters
+host = 'pndc-dahlia1.nfcc.gov.my'
+port = 27017
+username = 'nfisMongo'
+password = 'Nfis@dev2022'
+auth_source = 'admin'  # If you need to specify an authentication database
+
+# Create the MongoClient
+mongodb_client = pymongo.MongoClient(host=host, port=port,
+                                     username=username, password=password,
+                                     authSource=auth_source)
 # Define the configuration
 config = {
     "emailAddress": {
